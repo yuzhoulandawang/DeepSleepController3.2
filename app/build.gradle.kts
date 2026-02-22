@@ -3,7 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     id("com.google.dagger.hilt.android") version "2.52"
-    id("org.jetbrains.kotlin.plugin.compose") // 新增：Compose 编译器插件
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
 }
 
 android {
