@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     id("com.google.dagger.hilt.android") version "2.52"
+    id("org.jetbrains.kotlin.plugin.compose") // 新增：Compose 编译器插件
 }
 
 android {
@@ -55,9 +56,10 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
+    // ⚠️ 移除 composeOptions 块（Kotlin 2.0+ 不再需要）
+    // composeOptions {
+    //     kotlinCompilerExtensionVersion = "1.5.15"
+    // }
 
     packaging {
         resources {
