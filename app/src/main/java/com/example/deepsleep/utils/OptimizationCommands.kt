@@ -454,25 +454,25 @@ done
          */
         fun applyPerformanceMode(): List<String> {
             return listOf(
-                # 小核（cluster 0）
+                // 小核（cluster 0）
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy0walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy0walt/down_rate_limit_us",
                 "echo 75 > /sys/devices/system/cpu/cpufreq/policy0walt/hispeed_load",
                 "echo 70 > /sys/devices/system/cpu/cpufreq/policy0walt/target_loads",
                 
-                # 中核（cluster 1）
+                // 中核（cluster 1）
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy1walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy1walt/down_rate_limit_us",
                 "echo 75 > /sys/devices/system/cpu/cpufreq/policy1walt/hispeed_load",
                 "echo 70 > /sys/devices/system/cpu/cpufreq/policy1walt/target_loads",
                 
-                # 大核（cluster 2）
+                // 大核（cluster 2）
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy2walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy2walt/down_rate_limit_us",
                 "echo 75 > /sys/devices/system/cpu/cpufreq/policy2walt/hispeed_load",
                 "echo 70 > /sys/devices/system/cpu/cpufreq/policy2walt/target_loads",
                 
-                # 设置调速器为 schedutil
+                // 设置调速器为 schedutil
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor",
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy1/scaling_governor",
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy2/scaling_governor"
@@ -484,25 +484,25 @@ done
          */
         fun applyStandbyMode(): List<String> {
             return listOf(
-                # 小核（cluster 0）
+                // 小核（cluster 0）
                 "echo 5000 > /sys/devices/system/cpu/cpufreq/policy0walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy0walt/down_rate_limit_us",
                 "echo 95 > /sys/devices/system/cpu/cpufreq/policy0walt/hispeed_load",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy0walt/target_loads",
                 
-                # 中核（cluster 1）
+                // 中核（cluster 1）
                 "echo 5000 > /sys/devices/system/cpu/cpufreq/policy1walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy1walt/down_rate_limit_us",
                 "echo 95 > /sys/devices/system/cpu/cpufreq/policy1walt/hispeed_load",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy1walt/target_loads",
                 
-                # 大核（cluster 2）
+                // 大核（cluster 2）
                 "echo 5000 > /sys/devices/system/cpu/cpufreq/policy2walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy2walt/down_rate_limit_us",
                 "echo 95 > /sys/devices/system/cpu/cpufreq/policy2walt/hispeed_load",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy2walt/target_loads",
                 
-                # 设置调速器为 schedutil
+                // 设置调速器为 schedutil
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor",
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy1/scaling_governor",
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy2/scaling_governor"
@@ -514,25 +514,25 @@ done
          */
         fun applyDefaultMode(): List<String> {
             return listOf(
-                # 小核（cluster 0）
+                // 小核（cluster 0）
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy0walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy0walt/down_rate_limit_us",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy0walt/hispeed_load",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy0walt/target_loads",
                 
-                # 中核（cluster 1）
+                // 中核（cluster 1）
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy1walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy1walt/down_rate_limit_us",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy1walt/hispeed_load",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy1walt/target_loads",
                 
-                # 大核（cluster 2）
+                // 大核（cluster 2）
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy2walt/up_rate_limit_us",
                 "echo 0 > /sys/devices/system/cpu/cpufreq/policy2walt/down_rate_limit_us",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy2walt/hispeed_load",
                 "echo 90 > /sys/devices/system/cpu/cpufreq/policy2walt/target_loads",
                 
-                # 恢复默认调速器
+                // 恢复默认调速器
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor",
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy1/scaling_governor",
                 "echo schedutil > /sys/devices/system/cpu/cpufreq/policy2/scaling_governor"
