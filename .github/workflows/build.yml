@@ -1,4 +1,4 @@
-name: 🔍 Smart Diagnostic Build (No Auto-Fix)
+name: 🔍 Smart Diagnostic Build with Error Categorization
 
 on:
   workflow_dispatch:
@@ -21,6 +21,16 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       # ========== 诊断阶段 ==========
       - name: 📋 Collect environment info
@@ -61,7 +71,6 @@ jobs:
           echo "- AGP version: $AGP_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "- Kotlin plugin version: $KOTLIN_VERSION" >> $GITHUB_STEP_SUMMARY
           if [[ "$AGP_VERSION" != "unknown" && "$KOTLIN_VERSION" != "unknown" ]]; then
-            # 这里可以添加简单的兼容性检查，比如 AGP 8.x 需要 Kotlin 1.9+
             AGP_MAJOR=${AGP_VERSION%%.*}
             KOTLIN_MAJOR=${KOTLIN_VERSION%%.*}
             if [[ $AGP_MAJOR -ge 8 && $KOTLIN_MAJOR -lt 9 ]]; then
@@ -98,11 +107,11 @@ jobs:
           ./gradlew assembleDebug --stacktrace --scan 2>&1 | tee build.log
         continue-on-error: true
 
-      # ========== 生成最终报告 ==========
-      - name: 📊 Generate final report
+      # ========== 分类错误报告 ==========
+      - name: 📊 Generate categorized error report
         if: always()
         run: |
-          echo "# 📋 Build Diagnostic Report" > final-report.md
+          echo "# 📋 Build Diagnostic Report (Categorized)" > final-report.md
           echo "" >> final-report.md
           echo "## 🔍 Summary" >> final-report.md
           if [ -f build.log ]; then
@@ -111,21 +120,51 @@ jobs:
             else
               echo "❌ **Build failed**" >> final-report.md
               echo "" >> final-report.md
-              echo "### First 20 errors" >> final-report.md
-              echo '```' >> final-report.md
-              grep -E "^e:|^error:|FAILURE:|Unresolved reference|Suspend function" build.log | head -20 >> final-report.md
-              echo '```' >> final-report.md
+              echo "### 📊 Error Categories" >> final-report.md
+              
+              # 定义各种错误类型的 grep 模式
+              declare -A error_patterns=(
+                ["KSP/Kotlin版本不兼容"]="ksp.*is too new for kotlin"
+                ["挂起函数调用错误"]="Suspend function.*should be called only from a coroutine"
+                ["未解决的引用"]="Unresolved reference"
+                ["类型不匹配"]="type mismatch"
+                ["参数不匹配"]="No value passed for parameter|Cannot find a parameter"
+                ["函数重载冲突"]="Conflicting overloads"
+                ["缺少导入"]="Unresolved reference.*(import|kotlinx)"
+                ["Compose上下文错误"]="@Composable invocations can only happen from the context of a @Composable function"
+                ["资源缺失"]="resource.*not found"
+                ["依赖冲突"]="Conflict|dependency convergence"
+                ["其他错误"]="^e:|^error:|FAILURE:"
+              )
+              
+              for category in "${!error_patterns[@]}"; do
+                pattern="${error_patterns[$category]}"
+                count=$(grep -E "$pattern" build.log | wc -l)
+                if [ "$count" -gt 0 ]; then
+                  echo "- **$category**: $count occurrences" >> final-report.md
+                  echo '  ```' >> final-report.md
+                  grep -E "$pattern" build.log | head -3 | sed 's/^/  /' >> final-report.md
+                  if [ "$count" -gt 3 ]; then
+                    echo "  ... (and $((count-3)) more)" >> final-report.md
+                  fi
+                  echo '  ```' >> final-report.md
+                fi
+              done
+              
+              echo "" >> final-report.md
+              echo "### 📄 Full Log" >> final-report.md
+              echo "Download \`build.log\` artifact for complete details." >> final-report.md
             fi
           else
             echo "⚠️ Build log not found" >> final-report.md
           fi
-
+          
+          # 附加环境信息（可选）
           echo "" >> final-report.md
-          echo "### Suggested next steps" >> final-report.md
-          echo "- Check lint report in artifacts for code issues." >> final-report.md
-          echo "- Review dependency tree for conflicts." >> final-report.md
-          echo "- Verify Kotlin/AGP compatibility." >> final-report.md
-          echo "- Look for missing resources or theme definitions." >> final-report.md
+          echo "## 🖥️ Environment" >> final-report.md
+          echo "- Java: $(java -version 2>&1 | head -1)" >> final-report.md
+          echo "- Gradle: $(./gradlew --version | grep "Gradle ")" >> final-report.md
+          echo "- Kotlin: $(./gradlew --version | grep "Kotlin:")" >> final-report.md
 
       # ========== 上传所有产物 ==========
       - name: 📤 Upload diagnostic artifacts
