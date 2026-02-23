@@ -15,7 +15,8 @@ class MemoryCache<K, V>(
     private val cache = LinkedHashMap<K, CacheEntry<V>>(maxSize, 0.75f, true)
     private val mutex = Mutex()
 
-    private data class CacheEntry<V>(
+    // 修复：改为 internal 避免暴露私有类型
+    internal data class CacheEntry<V>(
         val value: V,
         val timestamp: Long = System.currentTimeMillis()
     ) {
@@ -41,7 +42,7 @@ class MemoryCache<K, V>(
      */
     suspend fun put(key: K, value: V) = mutex.withLock {
         cache[key] = CacheEntry(value)
-        
+
         // 如果超过最大容量，移除最旧的项
         if (cache.size > maxSize) {
             cache.remove(cache.keys.first())
