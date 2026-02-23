@@ -6,14 +6,15 @@ import kotlinx.coroutines.withContext
 
 class CustomOptimizer {
 
+    private fun batchOptimizeApps(whitelist: List<String>): List<String> =
+        OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist)
+
     suspend fun applyLightPowerSaving(whitelist: List<String> = emptyList()): Boolean {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
-            }
+            commands.addAll(batchOptimizeApps(whitelist))
             RootCommander.execBatch(commands).isSuccess
         }
     }
@@ -24,9 +25,7 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.disableMotion())
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
-            whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
-            }
+            commands.addAll(batchOptimizeApps(whitelist))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(100))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
@@ -39,9 +38,7 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.disableMotion())
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
-            whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
-            }
+            commands.addAll(batchOptimizeApps(whitelist))
             commands.addAll(OptimizationCommands.PowerSaver.enable())
             commands.addAll(OptimizationCommands.NetworkOptimizer.disableBluetooth())
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(50))
@@ -65,9 +62,7 @@ class CustomOptimizer {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
-            }
+            commands.addAll(batchOptimizeApps(whitelist))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
