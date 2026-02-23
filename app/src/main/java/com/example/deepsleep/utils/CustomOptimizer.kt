@@ -11,7 +11,7 @@ class CustomOptimizer {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 修复：遍历 whitelist，为每个应用单独添加命令
+            // 遍历白名单，为每个应用单独生成命令
             whitelist.forEach { app ->
                 commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
             }
@@ -66,6 +66,7 @@ class CustomOptimizer {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
+            // 同样遍历白名单
             whitelist.forEach { app ->
                 commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
             }
@@ -81,7 +82,7 @@ class CustomOptimizer {
             val result = RootCommander.exec(tempCommands)
             val temp = result.out.firstOrNull()?.toIntOrNull() ?: 0
             val tempCelsius = temp / 1000.0
-            if (tempCelsius > threshold) {
+            return if (tempCelsius > threshold) {
                 val commands = OptimizationCommands.ThermalOptimizer.limitMaxFreq(2, 1200000)
                 RootCommander.exec(commands).isSuccess
             } else {
