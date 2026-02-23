@@ -11,7 +11,6 @@ class CustomOptimizer {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 直接传入列表
             commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
             RootCommander.execBatch(commands).isSuccess
         }
@@ -60,10 +59,8 @@ class CustomOptimizer {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 遍历列表，传入单个应用包名
-            whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
-            }
+            // 直接传入列表，不再遍历
+            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
