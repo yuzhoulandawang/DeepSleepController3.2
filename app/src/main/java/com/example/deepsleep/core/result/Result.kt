@@ -74,8 +74,8 @@ sealed class Result<T> {   // 移除 out 修饰符
     fun <R> map(transform: (T) -> R): Result<R> {
         return when (this) {
             is Success -> Success(transform(data))
-            is Error -> Error(message, throwable, code)
-            is Loading -> Loading
+            is Error -> this as Result<R>
+            is Loading -> Loading as Result<R>
         }
     }
 
@@ -85,8 +85,8 @@ sealed class Result<T> {   // 移除 out 修饰符
     fun <R> flatMap(transform: (T) -> Result<R>): Result<R> {
         return when (this) {
             is Success -> transform(data)
-            is Error -> Error(message, throwable, code)
-            is Loading -> Loading
+            is Error -> this as Result<R>
+            is Loading -> Loading as Result<R>
         }
     }
 
@@ -144,7 +144,7 @@ sealed class Result<T> {   // 移除 out 修饰符
             return try {
                 block()
             } catch (e: Exception) {
-                error(e.message ?: "Unknown error", e)
+                error(e.message ?: "Unknown error", e) as Result<T>
             }
         }
     }
