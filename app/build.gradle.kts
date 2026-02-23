@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
-    id("com.google.dagger.hilt.android") version "2.55"
+    id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
 }
 
@@ -56,11 +56,6 @@ android {
         buildConfig = true
     }
 
-    // 注意：Kotlin 2.0+ 不再需要 composeOptions 块
-    // composeOptions {
-    //     kotlinCompilerExtensionVersion = "1.5.15"
-    // }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -69,9 +64,9 @@ android {
 }
 
 dependencies {
-    // Hilt 依赖注入
-    implementation("com.google.dagger:hilt-android:2.55")
-    ksp("com.google.dagger:hilt-compiler:2.55")
+    // 升级 Hilt 依赖到 2.57
+    implementation("com.google.dagger:hilt-android:2.57")
+    ksp("com.google.dagger:hilt-compiler:2.57")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Kotlin Coroutines
@@ -107,7 +102,7 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // Room 数据库 (升级到 2.7.0)
+    // Room 数据库
     implementation("androidx.room:room-runtime:2.7.0")
     implementation("androidx.room:room-ktx:2.7.0")
     ksp("androidx.room:room-compiler:2.7.0")
@@ -123,11 +118,4 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-}
-
-// 强制使用 javapoet 1.13.0 解决版本冲突
-configurations.all {
-    resolutionStrategy {
-        force("com.squareup:javapoet:1.13.0")
-    }
 }
