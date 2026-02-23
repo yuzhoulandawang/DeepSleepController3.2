@@ -33,82 +33,18 @@ class ToastManager {
     private val _toasts = mutableStateListOf<ToastMessage>()
     val toasts: List<ToastMessage> = _toasts
 
-    fun showSuccess(
-        title: String,
-        message: String = "",
-        duration: Long = 3000L,
-        action: (() -> Unit)? = null,
-        actionText: String? = null
-    ) {
-        showToast(
-            ToastMessage(
-                type = ToastType.SUCCESS,
-                title = title,
-                message = message,
-                duration = duration,
-                action = action,
-                actionText = actionText
-            )
-        )
+    fun showSuccess(title: String, message: String = "", duration: Long = 3000L, action: (() -> Unit)? = null, actionText: String? = null) {
+        showToast(ToastMessage(type = ToastType.SUCCESS, title = title, message = message, duration = duration, action = action, actionText = actionText))
     }
-
-    fun showError(
-        title: String,
-        message: String = "",
-        duration: Long = 5000L,
-        action: (() -> Unit)? = null,
-        actionText: String? = null
-    ) {
-        showToast(
-            ToastMessage(
-                type = ToastType.ERROR,
-                title = title,
-                message = message,
-                duration = duration,
-                action = action,
-                actionText = actionText
-            )
-        )
+    fun showError(title: String, message: String = "", duration: Long = 5000L, action: (() -> Unit)? = null, actionText: String? = null) {
+        showToast(ToastMessage(type = ToastType.ERROR, title = title, message = message, duration = duration, action = action, actionText = actionText))
     }
-
-    fun showWarning(
-        title: String,
-        message: String = "",
-        duration: Long = 4000L,
-        action: (() -> Unit)? = null,
-        actionText: String? = null
-    ) {
-        showToast(
-            ToastMessage(
-                type = ToastType.WARNING,
-                title = title,
-                message = message,
-                duration = duration,
-                action = action,
-                actionText = actionText
-            )
-        )
+    fun showWarning(title: String, message: String = "", duration: Long = 4000L, action: (() -> Unit)? = null, actionText: String? = null) {
+        showToast(ToastMessage(type = ToastType.WARNING, title = title, message = message, duration = duration, action = action, actionText = actionText))
     }
-
-    fun showInfo(
-        title: String,
-        message: String = "",
-        duration: Long = 3000L,
-        action: (() -> Unit)? = null,
-        actionText: String? = null
-    ) {
-        showToast(
-            ToastMessage(
-                type = ToastType.INFO,
-                title = title,
-                message = message,
-                duration = duration,
-                action = action,
-                actionText = actionText
-            )
-        )
+    fun showInfo(title: String, message: String = "", duration: Long = 3000L, action: (() -> Unit)? = null, actionText: String? = null) {
+        showToast(ToastMessage(type = ToastType.INFO, title = title, message = message, duration = duration, action = action, actionText = actionText))
     }
-
     private fun showToast(message: ToastMessage) {
         _toasts.add(message)
         CoroutineScope(Dispatchers.Main).launch {
@@ -116,7 +52,6 @@ class ToastManager {
             _toasts.remove(message)
         }
     }
-
     fun dismiss(id: String) { _toasts.removeAll { it.id == id } }
     fun clearAll() { _toasts.clear() }
 }
@@ -125,14 +60,8 @@ class ToastManager {
 fun ToastComponent(manager: ToastManager, modifier: Modifier = Modifier) {
     val toasts by rememberUpdatedState(manager.toasts)
     Box(modifier.fillMaxSize(), Alignment.BottomCenter) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            toasts.forEach { toast ->
-                AnimatedToast(toast) { manager.dismiss(toast.id) }
-            }
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            toasts.forEach { toast -> AnimatedToast(toast) { manager.dismiss(toast.id) } }
         }
     }
 }
@@ -140,24 +69,12 @@ fun ToastComponent(manager: ToastManager, modifier: Modifier = Modifier) {
 @Composable
 fun AnimatedToast(message: ToastMessage, onDismiss: () -> Unit) {
     var visible by remember { mutableStateOf(true) }
-    val enter = slideInVertically(
-        animationSpec = tween(300, easing = FastOutSlowInEasing)
-    ) + fadeIn(tween(300))
-    val exit = slideOutVertically(
-        animationSpec = tween(300, easing = FastOutSlowInEasing)
-    ) + fadeOut(tween(300))
+    val enter = slideInVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeIn(tween(300))
+    val exit = slideOutVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeOut(tween(300))
     AnimatedVisibility(visible, enter = enter, exit = exit) {
-        ToastCard(
-            message = message,
-            onAction = {
-                message.action?.invoke()
-                visible = false
-                onDismiss()
-            },
-            onDismiss = {
-                visible = false
-                onDismiss()
-            }
+        ToastCard(message,
+            onAction = { message.action?.invoke(); visible = false; onDismiss() },
+            onDismiss = { visible = false; onDismiss() }
         )
     }
 }
@@ -186,8 +103,7 @@ fun ToastCard(message: ToastMessage, onAction: () -> Unit, onDismiss: () -> Unit
             Icon(icon, null, tint = contentColor, Modifier.size(24.dp))
             Column(Modifier.weight(1f), Arrangement.spacedBy(2.dp)) {
                 Text(message.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = contentColor)
-                if (message.message.isNotBlank())
-                    Text(message.message, style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.8f))
+                if (message.message.isNotBlank()) Text(message.message, style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.8f))
             }
             if (message.action != null && message.actionText != null) {
                 TextButton(onAction, colors = ButtonDefaults.textButtonColors(contentColor = contentColor)) {
@@ -203,73 +119,28 @@ fun ToastCard(message: ToastMessage, onAction: () -> Unit, onDismiss: () -> Unit
 
 val GlobalToastManager = ToastManager()
 
-fun showSuccessToast(
-    title: String,
-    message: String = "",
-    duration: Long = 3000L,
-    action: (() -> Unit)? = null,
-    actionText: String? = null
-) {
-    GlobalToastManager.showSuccess(title, message, duration, action, actionText)
-}
-
-fun showErrorToast(
-    title: String,
-    message: String = "",
-    duration: Long = 5000L,
-    action: (() -> Unit)? = null,
-    actionText: String? = null
-) {
-    GlobalToastManager.showError(title, message, duration, action, actionText)
-}
-
-fun showWarningToast(
-    title: String,
-    message: String = "",
-    duration: Long = 4000L,
-    action: (() -> Unit)? = null,
-    actionText: String? = null
-) {
-    GlobalToastManager.showWarning(title, message, duration, action, actionText)
-}
-
-fun showInfoToast(
-    title: String,
-    message: String = "",
-    duration: Long = 3000L,
-    action: (() -> Unit)? = null,
-    actionText: String? = null
-) {
-    GlobalToastManager.showInfo(title, message, duration, action, actionText)
-}
+fun showSuccessToast(title: String, message: String = "", duration: Long = 3000L, action: (() -> Unit)? = null, actionText: String? = null) = GlobalToastManager.showSuccess(title, message, duration, action, actionText)
+fun showErrorToast(title: String, message: String = "", duration: Long = 5000L, action: (() -> Unit)? = null, actionText: String? = null) = GlobalToastManager.showError(title, message, duration, action, actionText)
+fun showWarningToast(title: String, message: String = "", duration: Long = 4000L, action: (() -> Unit)? = null, actionText: String? = null) = GlobalToastManager.showWarning(title, message, duration, action, actionText)
+fun showInfoToast(title: String, message: String = "", duration: Long = 3000L, action: (() -> Unit)? = null, actionText: String? = null) = GlobalToastManager.showInfo(title, message, duration, action, actionText)
 
 @Composable
 fun DeepSleepSnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
     SnackbarHost(hostState, modifier.padding(16.dp)) { snackbarData ->
-        // 正确使用 Snackbar
         Snackbar(
             snackbarData = snackbarData,
-            modifier = Modifier,
             shape = RoundedCornerShape(8.dp)
         ) {
-            // 默认内容已经包含消息文本
-            // 如果需要自定义 action 按钮，可以通过 snackbarData.visuals.actionLabel 等处理
-            // 但此处的 lambda 用于在 snackbar 内部添加额外内容，通常不需要
+            // 默认内容已包含消息文本
         }
     }
 }
 
 @Composable
-fun ConfirmDialog(
-    title: String,
-    message: String,
-    confirmText: String = "确认",
-    dismissText: String = "取消",
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-    icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Default.Warning,
-    iconColor: Color = MaterialTheme.colorScheme.tertiary
-) {
+fun ConfirmDialog(title: String, message: String, confirmText: String = "确认", dismissText: String = "取消",
+                  onConfirm: () -> Unit, onDismiss: () -> Unit,
+                  icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Default.Warning,
+                  iconColor: Color = MaterialTheme.colorScheme.tertiary) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(icon, null, tint = iconColor, Modifier.size(32.dp)) },
@@ -310,18 +181,13 @@ fun ProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
             color = color,
-            trackColor = color.copy(alpha = 0.2f)
+            trackColor = color.copy(alpha = 0.2f)   // trackColor 是 Color，不是 lambda
         )
     }
 }
 
 @Composable
-fun StatusIndicator(
-    status: Boolean,
-    activeText: String = "已启用",
-    inactiveText: String = "已禁用",
-    modifier: Modifier = Modifier
-) {
+fun StatusIndicator(status: Boolean, activeText: String = "已启用", inactiveText: String = "已禁用", modifier: Modifier = Modifier) {
     Row(modifier, Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
         Box(Modifier.size(8.dp).background(if (status) Color.Green else Color.Gray, androidx.compose.foundation.shape.CircleShape))
         Text(if (status) activeText else inactiveText, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
