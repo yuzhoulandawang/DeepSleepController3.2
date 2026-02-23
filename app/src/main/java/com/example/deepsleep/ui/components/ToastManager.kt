@@ -140,8 +140,12 @@ fun ToastComponent(manager: ToastManager, modifier: Modifier = Modifier) {
 @Composable
 fun AnimatedToast(message: ToastMessage, onDismiss: () -> Unit) {
     var visible by remember { mutableStateOf(true) }
-    val enter = slideInVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeIn(tween(300))
-    val exit = slideOutVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeOut(tween(300))
+    val enter = slideInVertically(
+        animationSpec = tween(300, easing = FastOutSlowInEasing)
+    ) + fadeIn(tween(300))
+    val exit = slideOutVertically(
+        animationSpec = tween(300, easing = FastOutSlowInEasing)
+    ) + fadeOut(tween(300))
     AnimatedVisibility(visible, enter = enter, exit = exit) {
         ToastCard(
             message = message,
@@ -241,11 +245,20 @@ fun showInfoToast(
 
 @Composable
 fun DeepSleepSnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
-    SnackbarHost(hostState, modifier.padding(16.dp)) { data ->
-        Snackbar(data, shape = RoundedCornerShape(8.dp)) {
-            data.visuals.actionLabel?.let { actionLabel ->
-                TextButton(onClick = data::performAction) { Text(actionLabel) }
-            }
+    SnackbarHost(hostState, modifier.padding(16.dp)) { snackbarData ->
+        // 正确使用 Snackbar
+        Snackbar(
+            modifier = Modifier,
+            action = {
+                snackbarData.visuals.actionLabel?.let { actionLabel ->
+                    TextButton(onClick = snackbarData::performAction) {
+                        Text(actionLabel)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(snackbarData.visuals.message)
         }
     }
 }
