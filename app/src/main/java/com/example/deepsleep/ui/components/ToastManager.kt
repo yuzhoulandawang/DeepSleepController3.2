@@ -1,4 +1,5 @@
 package com.example.deepsleep.ui.components
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 
@@ -52,7 +53,7 @@ data class ToastMessage(
 class ToastManager {
     private val _toasts = mutableStateListOf<ToastMessage>()
     val toasts: List<ToastMessage> = _toasts
-    
+
     /**
      * 显示成功提示
      */
@@ -74,7 +75,7 @@ class ToastManager {
             )
         )
     }
-    
+
     /** 
      * 显示错误提示
      */
@@ -96,7 +97,7 @@ class ToastManager {
             )
         )
     }
-    
+
     /**
      * 显示警告提示
      */
@@ -118,7 +119,7 @@ class ToastManager {
             )
         )
     }
-    
+
     /** 
      * 显示信息提示
      */
@@ -140,27 +141,27 @@ class ToastManager {
             )
         )
     }
-    
+
     /**
      * 显示自定义 Toast
      */
     private fun showToast(message: ToastMessage) {
         _toasts.add(message)
-        
+
         // 自动移除
         CoroutineScope(Dispatchers.Main).launch {
             delay(message.duration)
             _toasts.remove(message)
         }
     }
-    
+
     /** 
      * 移除指定 Toast
      */
     fun dismiss(id: String) {
         _toasts.removeAll { it.id == id }
     }
-    
+
     /**
      * 清除所有 Toast
      */
@@ -178,7 +179,7 @@ fun ToastComponent(
     modifier: Modifier = Modifier
 ) {
     val toasts by rememberUpdatedState(manager.toasts)
-    
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
@@ -209,7 +210,7 @@ fun AnimatedToast(
     onDismiss: () -> Unit
 ) {
     var visible by remember { mutableStateOf(true) }
-    
+
     val enterTransition = remember {
         slideInVertically(
             animationSpec = tween(
@@ -221,7 +222,7 @@ fun AnimatedToast(
             animationSpec = tween(durationMillis = 300)
         )
     }
-    
+
     val exitTransition = remember {
         slideOutVertically(
             animationSpec = tween(
@@ -233,7 +234,7 @@ fun AnimatedToast(
             animationSpec = tween(durationMillis = 300)
         )
     }
-    
+
     AnimatedVisibility(
         visible = visible,
         enter = enterTransition,
@@ -281,14 +282,14 @@ fun ToastCard(
             MaterialTheme.colorScheme.onSecondary
         )
     }
-    
+
     val icon = when (message.type) {
         ToastType.SUCCESS -> Icons.Default.CheckCircle
         ToastType.ERROR -> Icons.Default.Error
         ToastType.WARNING -> Icons.Default.Warning
         ToastType.INFO -> Icons.Default.Info
     }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -315,7 +316,7 @@ fun ToastCard(
                 tint = colors.second,
                 modifier = Modifier.size(24.dp)
             )
-            
+
             // 内容
             Column(
                 modifier = Modifier.weight(1f),
@@ -327,7 +328,7 @@ fun ToastCard(
                     fontWeight = FontWeight.Bold,
                     color = colors.second
                 )
-                
+
                 if (message.message.isNotBlank()) {
                     Text(
                         text = message.message,
@@ -336,7 +337,7 @@ fun ToastCard(
                     )
                 }
             }
-            
+
             // 操作按钮
             if (message.action != null && message.actionText != null) {
                 TextButton(
@@ -352,7 +353,7 @@ fun ToastCard(
                     )
                 }
             }
-            
+
             // 关闭按钮
             IconButton(
                 onClick = onDismiss,
@@ -535,6 +536,7 @@ fun LoadingDialog(
 
 /**
  * 进度指示器组件
+ * 修复：添加 @Composable 注解
  */
 @Composable
 fun ProgressIndicator(
@@ -564,7 +566,7 @@ fun ProgressIndicator(
                 )
             }
         }
-        
+
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
@@ -576,6 +578,7 @@ fun ProgressIndicator(
 
 /** 
  * 状态指示器组件
+ * 修复：添加 @Composable 注解
  */
 @Composable
 fun StatusIndicator(
