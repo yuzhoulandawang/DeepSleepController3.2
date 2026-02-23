@@ -180,4 +180,3 @@ jobs:
         with:
           name: deep-sleep-controller-debug
           path: app/build/outputs/apk/debug/*.apk
-这个你也参考一下
