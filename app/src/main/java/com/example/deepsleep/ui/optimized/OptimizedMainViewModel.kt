@@ -9,7 +9,8 @@ import com.example.deepsleep.core.result.Result
 import com.example.deepsleep.core.result.ErrorCode
 import com.example.deepsleep.core.result.rootError
 import com.example.deepsleep.core.security.SecurityValidator
-import com.example.deepsleep.data.LogRepository  // 添加导入
+import com.example.deepsleep.core.security.RootVerificationInfo  // 导入类型
+import com.example.deepsleep.data.LogRepository
 import com.example.deepsleep.data.SettingsRepository
 import com.example.deepsleep.data.StatsRepository
 import com.example.deepsleep.model.AppSettings
@@ -69,7 +70,8 @@ class OptimizedMainViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isCheckingRoot = true)
 
             monitorPerformance("refreshRootStatus") {
-                Result.catch {
+                // 修复：指定 Result 的类型参数
+                Result.catch<RootVerificationInfo> {
                     // 使用增强的安全验证
                     val verificationInfo = SecurityValidator.getRootVerificationDetails()
 
@@ -86,6 +88,7 @@ class OptimizedMainViewModel @Inject constructor(
                         errorMessage = message
                     )
                     rootError(message, throwable)
+                    Unit  // 确保返回 Unit
                 }
             }
 
@@ -101,7 +104,8 @@ class OptimizedMainViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isCheckingRoot = true)
 
             monitorPerformance("requestRoot") {
-                Result.catch {
+                // 修复：指定 Result 的类型参数
+                Result.catch<Boolean> {
                     val granted = rootCommander.requestRootAccess()
 
                     if (granted) {
@@ -116,11 +120,13 @@ class OptimizedMainViewModel @Inject constructor(
                         Result.error("Root 权限请求失败", null, ErrorCode.ROOT_PERMISSION_DENIED)
                     }
                 }.onError { message, throwable ->
-                    _uiState.value = _uiState.value.copy(
+                    // 修复：更新 _rootState 而不是 _uiState
+                    _rootState.value = _rootState.value.copy(
                         hasRoot = false,
                         errorMessage = message
                     )
                     rootError(message, throwable)
+                    Unit
                 }
             }
 
@@ -134,7 +140,8 @@ class OptimizedMainViewModel @Inject constructor(
     fun forceDoze() {
         viewModelScope.launch {
             monitorPerformance("forceDoze") {
-                Result.catch {
+                // 修复：指定 Result 的类型参数
+                Result.catch<Boolean> {
                     if (!_rootState.value.hasRoot) {
                         return@catch Result.error("未获取 Root 权限", null, ErrorCode.ROOT_NOT_AVAILABLE)
                     }
@@ -169,7 +176,8 @@ class OptimizedMainViewModel @Inject constructor(
     fun toggleDeepSleep() {
         viewModelScope.launch {
             monitorPerformance("toggleDeepSleep") {
-                Result.catch {
+                // 修复：指定 Result 的类型参数
+                Result.catch<Boolean> {
                     val currentEnabled = settings.value.deepSleepHookEnabled
                     settingsRepository.setDeepSleepHookEnabled(!currentEnabled)
 
@@ -189,7 +197,8 @@ class OptimizedMainViewModel @Inject constructor(
     fun setDeepSleepDelaySeconds(seconds: Int) {
         viewModelScope.launch {
             monitorPerformance("setDeepSleepDelaySeconds") {
-                Result.catch {
+                // 修复：指定 Result 的类型参数
+                Result.catch<Int> {
                     if (!SecurityValidator.isValidRange(seconds, 0, 300)) {
                         return@catch Result.error("延迟时间必须在 0-300 秒之间", null)
                     }
@@ -230,8 +239,9 @@ class OptimizedMainViewModel @Inject constructor(
     fun clearLogs() {
         viewModelScope.launch {
             monitorPerformance("clearLogs") {
-                Result.catch {
-                    LogRepository.clearLogs()   // 原为 settingsRepository.clearLogs()
+                // 修复：指定 Result 的类型参数
+                Result.catch<Unit> {
+                    LogRepository.clearLogs()
                     Result.success(Unit)
                 }
             }
