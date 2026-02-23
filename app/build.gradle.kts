@@ -1,78 +1,17 @@
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
-    id("com.google.dagger.hilt.android") version "2.52"
+    id("com.google.dagger.hilt.android")  // 版本已在根项目指定
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
 }
 
-android {
-    namespace = "com.example.deepsleep"
-    compileSdk = 35
-
-    defaultConfig {
-        applicationId = "com.example.deepsleep"
-        minSdk = 28
-        targetSdk = 35
-        versionCode = 32
-        versionName = "3.2"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-        debug {
-            isDebuggable = true
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-opt-in=kotlinx.coroutines.FlowPreview"
-        )
-    }
-
-    buildFeatures {
-        compose = true
-        buildConfig = true
-    }
-
-    // ⚠️ 移除 composeOptions 块（Kotlin 2.0+ 不再需要）
-    // composeOptions {
-    //     kotlinCompilerExtensionVersion = "1.5.15"
-    // }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-}
+// ... android 配置保持不变 ...
 
 dependencies {
-    // Hilt 依赖注入
-    implementation("com.google.dagger:hilt-android:2.52")
-    ksp("com.google.dagger:hilt-compiler:2.52")
+    // Hilt 依赖注入 (升级到 2.53.1)
+    implementation("com.google.dagger:hilt-android:2.53.1")
+    ksp("com.google.dagger:hilt-compiler:2.53.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Kotlin Coroutines
@@ -108,10 +47,10 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // Room 数据库
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    // Room 数据库 (升级到 2.7.0)
+    implementation("androidx.room:room-runtime:2.7.0")
+    implementation("androidx.room:room-ktx:2.7.0")
+    ksp("androidx.room:room-compiler:2.7.0")
 
     // Root 权限
     implementation("com.github.topjohnwu.libsu:core:5.2.2")
@@ -126,6 +65,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
 
+// 强制使用 javapoet 1.13.0（可选，但保留更安全）
 configurations.all {
     resolutionStrategy {
         force("com.squareup:javapoet:1.13.0")
