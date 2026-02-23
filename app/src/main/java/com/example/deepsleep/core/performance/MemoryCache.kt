@@ -15,8 +15,8 @@ class MemoryCache<K, V>(
     private val cache = LinkedHashMap<K, CacheEntry<V>>(maxSize, 0.75f, true)
     private val mutex = Mutex()
 
-    // 修复：改为 internal 避免暴露私有类型
-    internal data class CacheEntry<V>(
+    // 修复：改为 private 彻底避免暴露
+    private data class CacheEntry<V>(
         val value: V,
         val timestamp: Long = System.currentTimeMillis()
     ) {
