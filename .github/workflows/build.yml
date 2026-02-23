@@ -101,6 +101,10 @@ jobs:
           echo "### Installed SDK Platforms" >> $GITHUB_STEP_SUMMARY
           sdkmanager --list | grep -E "platforms;android-" | tail -5 >> $GITHUB_STEP_SUMMARY
 
+      # ========== 清理缓存，确保使用最新代码 ==========
+      - name: 🧹 Clean project (清除缓存)
+        run: ./gradlew clean
+
       # ========== 构建阶段（捕获完整日志） ==========
       - name: 🏗️ Build Debug APK (with scan)
         run: |
