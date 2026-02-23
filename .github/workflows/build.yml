@@ -101,14 +101,22 @@ jobs:
           echo "### Installed SDK Platforms" >> $GITHUB_STEP_SUMMARY
           sdkmanager --list | grep -E "platforms;android-" | tail -5 >> $GITHUB_STEP_SUMMARY
 
-      # ========== 清理缓存，确保使用最新代码 ==========
-      - name: 🧹 Clean project (清除缓存)
-        run: ./gradlew clean
+      # ========== 清理缓存并刷新依赖 ==========
+      - name: 🧹 Clean project and refresh dependencies
+        run: |
+          ./gradlew clean
+          ./gradlew --refresh-dependencies
+
+      # ========== 诊断：确认 JavaPoet 版本 ==========
+      - name: 🔎 Verify JavaPoet version
+        run: |
+          echo "### JavaPoet version (compile classpath)" >> $GITHUB_STEP_SUMMARY
+          ./gradlew -q app:dependencies --configuration compileClasspath | grep javapoet | head -5 >> $GITHUB_STEP_SUMMARY || echo "Not found" >> $GITHUB_STEP_SUMMARY
 
       # ========== 构建阶段（捕获完整日志） ==========
       - name: 🏗️ Build Debug APK (with scan)
         run: |
-          ./gradlew assembleDebug --stacktrace --scan 2>&1 | tee build.log
+          ./gradlew assembleDebug --stacktrace --scan --refresh-dependencies 2>&1 | tee build.log
         continue-on-error: true
 
       # ========== 分类错误报告 ==========
