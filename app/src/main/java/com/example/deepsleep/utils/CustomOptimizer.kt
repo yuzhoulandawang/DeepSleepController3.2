@@ -59,7 +59,6 @@ class CustomOptimizer {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 直接传入列表，不再遍历
             commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
