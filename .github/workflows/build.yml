@@ -22,6 +22,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # ========== 彻底清理环境，确保无缓存残留 ==========
+      - name: 🧹 Wipe Gradle caches and warm up Kotlin DSL
+        run: |
+          ./gradlew --stop
+          rm -rf ~/.gradle/caches/
+          ./gradlew help --stacktrace
+
       # ========== 诊断阶段 ==========
       - name: 📋 Collect environment info
         run: |
@@ -37,7 +44,6 @@ jobs:
           echo "### Compatibility Check" >> $GITHUB_STEP_SUMMARY
           echo "- Gradle version: $GRADLE_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "- AGP version: $AGP_VERSION" >> $GITHUB_STEP_SUMMARY
-          # 通用提示（非严格检查）
           echo "⚠️ If you encounter issues, ensure Gradle and AGP versions are compatible." >> $GITHUB_STEP_SUMMARY
 
       - name: 📄 Show app/build.gradle.kts content (head)
@@ -51,7 +57,7 @@ jobs:
             echo "✅ compileSdk found." >> $GITHUB_STEP_SUMMARY
           fi
 
-      # ========== 刷新依赖（不删除全部缓存） ==========
+      # ========== 刷新依赖（清理后无需重复） ==========
       - name: 🧹 Clean and refresh dependencies
         run: ./gradlew clean --refresh-dependencies
 
@@ -78,24 +84,23 @@ jobs:
             echo "need_fix=false" >> $GITHUB_OUTPUT
           fi
 
-      # ========== 智能错误处理：添加 resolutionStrategy 修复冲突（修复 heredoc 缩进问题） ==========
+      # ========== 智能错误处理：强制清理缓存并重试（您已手动添加 resolutionStrategy，无需修改文件） ==========
       - name: 🛠️ Auto-fix for Hilt/JavaPoet conflict
         if: steps.check_fix.outputs.need_fix == 'true'
         run: |
-          echo "Detected Hilt/JavaPoet conflict. Adding resolutionStrategy to force JavaPoet 1.13.0..."
-          # 检查是否已添加过，避免重复追加
-          if ! grep -q "force.*javapoet" app/build.gradle.kts; then
-            printf "\n// Auto-added by CI to fix Hilt/JavaPoet conflict (force JavaPoet 1.13.0)\n" >> app/build.gradle.kts
-            printf "configurations.all {\n" >> app/build.gradle.kts
-            printf "    resolutionStrategy {\n" >> app/build.gradle.kts
-            printf "        force(\"com.squareup:javapoet:1.13.0\")\n" >> app/build.gradle.kts
-            printf "    }\n" >> app/build.gradle.kts
-            printf "}\n" >> app/build.gradle.kts
-          fi
-          # 再次构建并生成新的日志
+          echo "Detected Hilt/JavaPoet conflict. Forcing cache cleanup and retry..."
+          ./gradlew --stop
+          rm -rf ~/.gradle/caches/
           ./gradlew clean assembleDebug --stacktrace 2>&1 | tee build_fixed.log
           cp build_fixed.log build.log
         continue-on-error: true
+
+      # ========== 输出 JavaPoet 的详细依赖信息（诊断用） ==========
+      - name: 🔍 Debug JavaPoet version (dependency insight)
+        if: always()
+        run: |
+          echo "### JavaPoet version insight" >> $GITHUB_STEP_SUMMARY
+          ./gradlew app:dependencyInsight --dependency javapoet --configuration debugCompileClasspath >> $GITHUB_STEP_SUMMARY || true
 
       # ========== 分类错误报告（基于最终的 build.log） ==========
       - name: 📊 Generate categorized error report
