@@ -69,9 +69,9 @@ android {
 }
 
 dependencies {
-    // Hilt 依赖注入 (升级到 2.53.1)
-    implementation("com.google.dagger:hilt-android:2.53.1")
-    ksp("com.google.dagger:hilt-compiler:2.53.1")
+    // Hilt 依赖注入
+    implementation("com.google.dagger:hilt-android:2.55")
+    ksp("com.google.dagger:hilt-compiler:2.55")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Kotlin Coroutines
