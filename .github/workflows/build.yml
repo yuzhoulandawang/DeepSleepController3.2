@@ -101,6 +101,21 @@ jobs:
           echo "### Installed SDK Platforms" >> $GITHUB_STEP_SUMMARY
           sdkmanager --list | grep -E "platforms;android-" | tail -5 >> $GITHUB_STEP_SUMMARY
 
+      # ========== 诊断和修复 compileSdk 缺失 ==========
+      - name: 📄 Show app/build.gradle.kts content
+        run: cat app/build.gradle.kts
+
+      - name: 🔧 Ensure compileSdk in app/build.gradle.kts
+        run: |
+          if ! grep -q "compileSdk = 35" app/build.gradle.kts; then
+            echo "⚠️ compileSdk not found, attempting to add it."
+            # 在 android 块内添加 compileSdk = 35
+            sed -i '/android {/a\    compileSdk = 35' app/build.gradle.kts
+            echo "✅ Added compileSdk = 35"
+          else
+            echo "✅ compileSdk found."
+          fi
+
       # ========== 清理缓存并刷新依赖 ==========
       - name: 🧹 Clean project and refresh dependencies
         run: |
@@ -127,7 +142,7 @@ jobs:
           echo "Detected Hilt/JavaPoet conflict. Attempting to upgrade Hilt version to 2.53.1 and Room to 2.7.0..."
           # 备份原始文件
           cp app/build.gradle.kts app/build.gradle.kts.bak
-          # 升级 Hilt 和 Room 版本（简单替换，可能需要更精确的匹配）
+          # 升级 Hilt 和 Room 版本（简单替换）
           sed -i 's/id("com.google.dagger.hilt.android") version "[0-9.]*"/id("com.google.dagger.hilt.android") version "2.53.1"/' app/build.gradle.kts
           sed -i 's/implementation("com.google.dagger:hilt-android:[0-9.]*")/implementation("com.google.dagger:hilt-android:2.53.1")/' app/build.gradle.kts
           sed -i 's/ksp("com.google.dagger:hilt-compiler:[0-9.]*")/ksp("com.google.dagger:hilt-compiler:2.53.1")/' app/build.gradle.kts
