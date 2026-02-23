@@ -536,7 +536,7 @@ fun LoadingDialog(
 
 /**
  * 进度指示器组件
- * 修复：添加 @Composable 注解
+ * 修复：修正 LinearProgressIndicator 的参数
  */
 @Composable
 fun ProgressIndicator(
@@ -568,7 +568,7 @@ fun ProgressIndicator(
         }
 
         LinearProgressIndicator(
-            progress = { progress },
+            progress = progress,   // 直接传 Float，而不是 lambda
             modifier = Modifier.fillMaxWidth(),
             color = color,
             trackColor = color.copy(alpha = 0.2f),
@@ -578,7 +578,6 @@ fun ProgressIndicator(
 
 /** 
  * 状态指示器组件
- * 修复：添加 @Composable 注解
  */
 @Composable
 fun StatusIndicator(
