@@ -27,8 +27,12 @@ class CustomOptimizer {
             // CPU 日常模式
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
 
-            // 后台应用优化（保留白名单）
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            // 修复：遍历 whitelist 为每个应用生成命令
+            if (whitelist.isNotEmpty()) {
+                whitelist.forEach { app ->
+                    commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+                }
+            }
 
             // 执行命令
             val result = RootCommander.execBatch(commands)
@@ -55,8 +59,12 @@ class CustomOptimizer {
             // CPU 待机模式
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
 
-            // 后台应用优化
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            // 修复：遍历 whitelist
+            if (whitelist.isNotEmpty()) {
+                whitelist.forEach { app ->
+                    commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+                }
+            }
 
             // 降低屏幕亮度
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(100))
@@ -89,8 +97,12 @@ class CustomOptimizer {
             // CPU 待机模式
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
 
-            // 后台应用优化
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            // 修复：遍历 whitelist
+            if (whitelist.isNotEmpty()) {
+                whitelist.forEach { app ->
+                    commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+                }
+            }
 
             // 系统省电模式
             commands.addAll(OptimizationCommands.PowerSaver.enable())
@@ -128,7 +140,8 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.CpuScheduler.applyPerformanceMode())
 
             // 后台应用优化（减少后台干扰）
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(emptyList()))
+            // 游戏模式下通常不需要白名单，如果需要也可添加
+            // 但此处原本传 emptyList，无需调用 batchOptimizeApps
 
             // 关闭系统省电模式
             commands.addAll(OptimizationCommands.PowerSaver.disable())
@@ -153,8 +166,12 @@ class CustomOptimizer {
             // CPU 日常模式
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
 
-            // 后台应用优化
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            // 修复：遍历 whitelist
+            if (whitelist.isNotEmpty()) {
+                whitelist.forEach { app ->
+                    commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+                }
+            }
 
             // 适中的屏幕亮度
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
@@ -189,8 +206,6 @@ class CustomOptimizer {
             }
         }
     }
-
-    // 修复：删除了这里的一个多余大括号
 
     /**
      * 应用自定义优化方案
