@@ -33,7 +33,6 @@ class ToastManager {
     private val _toasts = mutableStateListOf<ToastMessage>()
     val toasts: List<ToastMessage> = _toasts
 
-    // 所有 show 方法统一使用命名参数调用 ToastMessage
     fun showSuccess(
         title: String,
         message: String = "",
