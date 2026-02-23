@@ -30,11 +30,17 @@ class OptimizedMainViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : AndroidViewModel(application) {
 
+    // ========== UI 状态 ==========
+
     private val _uiState = MutableStateFlow(OptimizedUiState())
     val uiState: StateFlow<OptimizedUiState> = _uiState.asStateFlow()
 
+    // ========== Root 权限状态 ==========
+
     private val _rootState = MutableStateFlow(RootState())
     val rootState: StateFlow<RootState> = _rootState.asStateFlow()
+
+    // ========== 设置数据流 ==========
 
     val settings: StateFlow<AppSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.Lazily, AppSettings())
@@ -43,34 +49,51 @@ class OptimizedMainViewModel @Inject constructor(
         refreshRootStatus()
     }
 
+    // ========== Root 权限管理 ==========
+
+    /**
+     * 刷新 Root 权限状态（带性能监控和错误处理）
+     */
     fun refreshRootStatus() {
         if (_uiState.value.isCheckingRoot) return
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCheckingRoot = true)
+
             monitorPerformance("refreshRootStatus") {
                 Result.catch<RootVerificationInfo> {
-                    val info = SecurityValidator.getRootVerificationDetails()
+                    val verificationInfo = SecurityValidator.getRootVerificationDetails()
+
                     _rootState.value = _rootState.value.copy(
-                        hasRoot = info.isVerified,
-                        verificationInfo = info,
+                        hasRoot = verificationInfo.isVerified,
+                        verificationInfo = verificationInfo,
                         lastCheckTime = System.currentTimeMillis()
                     )
-                    Result.success(info)
+
+                    Result.success(verificationInfo)
                 }.onError { message, _ ->
-                    _rootState.value = _rootState.value.copy(hasRoot = false, errorMessage = message)
-                    // 不再调用 rootError，避免返回非 Unit
+                    _rootState.value = _rootState.value.copy(
+                        hasRoot = false,
+                        errorMessage = message
+                    )
                 }
             }
+
             _uiState.value = _uiState.value.copy(isCheckingRoot = false)
         }
     }
 
+    /**
+     * 请求 Root 权限
+     */
     fun requestRoot() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCheckingRoot = true)
+
             monitorPerformance("requestRoot") {
                 Result.catch<Boolean> {
                     val granted = rootCommander.requestRootAccess()
+
                     if (granted) {
                         val verified = SecurityValidator.verifyRoot()
                         _rootState.value = _rootState.value.copy(
@@ -79,17 +102,23 @@ class OptimizedMainViewModel @Inject constructor(
                         )
                         Result.success(verified)
                     } else {
-                        // 显式转换为 Result<Boolean>
                         Result.error("Root 权限请求失败", null, ErrorCode.ROOT_PERMISSION_DENIED) as Result<Boolean>
                     }
                 }.onError { message, _ ->
-                    _rootState.value = _rootState.value.copy(hasRoot = false, errorMessage = message)
+                    _rootState.value = _rootState.value.copy(
+                        hasRoot = false,
+                        errorMessage = message
+                    )
                 }
             }
+
             _uiState.value = _uiState.value.copy(isCheckingRoot = false)
         }
     }
 
+    /**
+     * 强制进入 Doze 模式
+     */
     fun forceDoze() {
         viewModelScope.launch {
             monitorPerformance("forceDoze") {
@@ -97,7 +126,9 @@ class OptimizedMainViewModel @Inject constructor(
                     if (!_rootState.value.hasRoot) {
                         return@catch Result.error("未获取 Root 权限", null, ErrorCode.ROOT_NOT_AVAILABLE) as Result<Boolean>
                     }
+
                     val success = dozeController.enterDeepSleep()
+
                     if (success) {
                         statsRepository.recordEnterAttempt()
                         statsRepository.recordEnterSuccess()
@@ -106,29 +137,43 @@ class OptimizedMainViewModel @Inject constructor(
                         Result.error("进入 Doze 模式失败", null, ErrorCode.DOZE_ENTER_FAILED) as Result<Boolean>
                     }
                 }.onSuccess {
-                    _uiState.value = _uiState.value.copy(toastMessage = "已强制进入 Doze 模式")
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "已强制进入 Doze 模式"
+                    )
                 }.onError { message, _ ->
-                    _uiState.value = _uiState.value.copy(errorMessage = message)
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = message
+                    )
                 }
             }
         }
     }
 
+    // ========== 设置管理 ==========
+
+    /**
+     * 切换深度睡眠开关
+     */
     fun toggleDeepSleep() {
         viewModelScope.launch {
             monitorPerformance("toggleDeepSleep") {
                 Result.catch<Boolean> {
                     val currentEnabled = settings.value.deepSleepHookEnabled
                     settingsRepository.setDeepSleepHookEnabled(!currentEnabled)
+
                     _uiState.value = _uiState.value.copy(
                         toastMessage = if (!currentEnabled) "深度睡眠已启用" else "深度睡眠已禁用"
                     )
+
                     Result.success(!currentEnabled)
                 }
             }
         }
     }
 
+    /**
+     * 更新深度睡眠延迟时间
+     */
     fun setDeepSleepDelaySeconds(seconds: Int) {
         viewModelScope.launch {
             monitorPerformance("setDeepSleepDelaySeconds") {
@@ -136,20 +181,39 @@ class OptimizedMainViewModel @Inject constructor(
                     if (!SecurityValidator.isValidRange(seconds, 0, 300)) {
                         return@catch Result.error("延迟时间必须在 0-300 秒之间", null) as Result<Int>
                     }
+
                     settingsRepository.setDeepSleepDelaySeconds(seconds)
                     Result.success(seconds)
                 }.onSuccess {
-                    _uiState.value = _uiState.value.copy(toastMessage = "延迟时间已设置为 $seconds 秒")
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "延迟时间已设置为 $seconds 秒"
+                    )
                 }.onError { message, _ ->
-                    _uiState.value = _uiState.value.copy(errorMessage = message)
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = message
+                    )
                 }
             }
         }
     }
 
-    fun clearErrorMessage() { _uiState.value = _uiState.value.copy(errorMessage = null) }
-    fun clearToastMessage() { _uiState.value = _uiState.value.copy(toastMessage = null) }
+    /**
+     * 清除错误消息
+     */
+    fun clearErrorMessage() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
 
+    /**
+     * 清除提示消息
+     */
+    fun clearToastMessage() {
+        _uiState.value = _uiState.value.copy(toastMessage = null)
+    }
+
+    /**
+     * 清除日志
+     */
     fun clearLogs() {
         viewModelScope.launch {
             monitorPerformance("clearLogs") {
@@ -162,12 +226,18 @@ class OptimizedMainViewModel @Inject constructor(
     }
 }
 
+/**
+ * 优化后的 UI 状态
+ */
 data class OptimizedUiState(
     val isCheckingRoot: Boolean = false,
     val errorMessage: String? = null,
     val toastMessage: String? = null
 )
 
+/**
+ * Root 权限状态
+ */
 data class RootState(
     val hasRoot: Boolean = false,
     val verificationInfo: RootVerificationInfo? = null,
