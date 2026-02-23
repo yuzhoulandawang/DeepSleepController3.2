@@ -78,22 +78,19 @@ jobs:
             echo "need_fix=false" >> $GITHUB_OUTPUT
           fi
 
-      # ========== 智能错误处理：添加 resolutionStrategy 修复冲突 ==========
+      # ========== 智能错误处理：添加 resolutionStrategy 修复冲突（修复 heredoc 缩进问题） ==========
       - name: 🛠️ Auto-fix for Hilt/JavaPoet conflict
         if: steps.check_fix.outputs.need_fix == 'true'
         run: |
           echo "Detected Hilt/JavaPoet conflict. Adding resolutionStrategy to force JavaPoet 1.13.0..."
           # 检查是否已添加过，避免重复追加
           if ! grep -q "force.*javapoet" app/build.gradle.kts; then
-            cat << 'EOF' >> app/build.gradle.kts
-
-// Auto-added by CI to fix Hilt/JavaPoet conflict (force JavaPoet 1.13.0)
-configurations.all {
-    resolutionStrategy {
-        force("com.squareup:javapoet:1.13.0")
-    }
-}
-EOF
+            printf "\n// Auto-added by CI to fix Hilt/JavaPoet conflict (force JavaPoet 1.13.0)\n" >> app/build.gradle.kts
+            printf "configurations.all {\n" >> app/build.gradle.kts
+            printf "    resolutionStrategy {\n" >> app/build.gradle.kts
+            printf "        force(\"com.squareup:javapoet:1.13.0\")\n" >> app/build.gradle.kts
+            printf "    }\n" >> app/build.gradle.kts
+            printf "}\n" >> app/build.gradle.kts
           fi
           # 再次构建并生成新的日志
           ./gradlew clean assembleDebug --stacktrace 2>&1 | tee build_fixed.log
