@@ -22,16 +22,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
       # ========== 诊断阶段 ==========
       - name: 📋 Collect environment info
         run: |
@@ -67,10 +57,8 @@ jobs:
       - name: 🧹 Wipe Gradle cache
         run: rm -rf ~/.gradle/caches/
 
-      - name: 🧹 Clean project and refresh dependencies
-        run: |
-          ./gradlew clean
-          ./gradlew --refresh-dependencies
+      - name: 🧹 Clean and refresh dependencies
+        run: ./gradlew clean --refresh-dependencies
 
       # ========== 诊断：确认 JavaPoet 版本 ==========
       - name: 🔎 Verify JavaPoet version
@@ -85,26 +73,37 @@ jobs:
           ./gradlew assembleDebug --stacktrace 2>&1 | tee build.log
         continue-on-error: true
 
-      # ========== 智能错误处理：如果失败且是 JavaPoet 问题，尝试修复并重试 ==========
+      # ========== 检测是否需要自动修复（Hilt/JavaPoet 冲突） ==========
+      - name: 🔎 Check if Hilt/JavaPoet conflict fix is needed
+        id: check_fix
+        run: |
+          if grep -q "java.lang.NoSuchMethodError.*javapoet\|com.squareup.javapoet.ClassName.canonicalName" build.log; then
+            echo "need_fix=true" >> $GITHUB_OUTPUT
+          else
+            echo "need_fix=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ========== 智能错误处理：尝试修复并重试 ==========
       - name: 🛠️ Auto-fix for Hilt/JavaPoet conflict
-        if: steps.first_build.outcome == 'failure' && (contains(steps.first_build.outputs.stdout, 'java.lang.NoSuchMethodError') || contains(steps.first_build.outputs.stdout, 'com.squareup.javapoet.ClassName.canonicalName'))
+        if: steps.check_fix.outputs.need_fix == 'true'
         run: |
           echo "Detected Hilt/JavaPoet conflict. Attempting to upgrade Hilt version to 2.55 and Room to 2.7.0..."
           # 备份原始文件
           cp app/build.gradle.kts app/build.gradle.kts.bak
-          # 升级 Hilt 和 Room 版本
-          sed -i 's/id("com.google.dagger.hilt.android") version "[0-9.]*"/id("com.google.dagger.hilt.android") version "2.55"/' app/build.gradle.kts
-          sed -i 's/implementation("com.google.dagger:hilt-android:[0-9.]*")/implementation("com.google.dagger:hilt-android:2.55")/' app/build.gradle.kts
-          sed -i 's/ksp("com.google.dagger:hilt-compiler:[0-9.]*")/ksp("com.google.dagger:hilt-compiler:2.55")/' app/build.gradle.kts
-          sed -i 's/implementation("androidx.room:room-runtime:[0-9.]*")/implementation("androidx.room:room-runtime:2.7.0")/' app/build.gradle.kts
-          sed -i 's/implementation("androidx.room:room-ktx:[0-9.]*")/implementation("androidx.room:room-ktx:2.7.0")/' app/build.gradle.kts
-          sed -i 's/ksp("androidx.room:room-compiler:[0-9.]*")/ksp("androidx.room:room-compiler:2.7.0")/' app/build.gradle.kts
-          # 再次清理并构建
+          # 升级 Hilt 和 Room 版本（同时匹配单引号和双引号）
+          sed -i -E 's/id[("]com.google.dagger.hilt.android[")] version [("][0-9.]+[")]/id("com.google.dagger.hilt.android") version "2.55"/' app/build.gradle.kts
+          sed -i -E 's/implementation[("]com.google.dagger:hilt-android:[0-9.]+[")]/implementation("com.google.dagger:hilt-android:2.55")/' app/build.gradle.kts
+          sed -i -E 's/ksp[("]com.google.dagger:hilt-compiler:[0-9.]+[")]/ksp("com.google.dagger:hilt-compiler:2.55")/' app/build.gradle.kts
+          sed -i -E 's/implementation[("]androidx.room:room-runtime:[0-9.]+[")]/implementation("androidx.room:room-runtime:2.7.0")/' app/build.gradle.kts
+          sed -i -E 's/implementation[("]androidx.room:room-ktx:[0-9.]+[")]/implementation("androidx.room:room-ktx:2.7.0")/' app/build.gradle.kts
+          sed -i -E 's/ksp[("]androidx.room:room-compiler:[0-9.]+[")]/ksp("androidx.room:room-compiler:2.7.0")/' app/build.gradle.kts
+          # 再次清理并构建（生成独立的日志文件，并覆盖 build.log 作为最终日志）
           rm -rf ~/.gradle/caches/
-          ./gradlew clean assembleDebug --stacktrace 2>&1 | tee build.log
+          ./gradlew clean assembleDebug --stacktrace 2>&1 | tee build_fixed.log
+          cp build_fixed.log build.log
         continue-on-error: true
 
-      # ========== 分类错误报告（基于最终 build.log） ==========
+      # ========== 分类错误报告（基于最终的 build.log） ==========
       - name: 📊 Generate categorized error report
         if: always()
         run: |
@@ -170,6 +169,7 @@ jobs:
           name: diagnostic-reports
           path: |
             build.log
+            build_fixed.log
             final-report.md
             app/build/reports/
           if-no-files-found: ignore
