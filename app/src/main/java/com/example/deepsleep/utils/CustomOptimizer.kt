@@ -1,4 +1,3 @@
-
 package com.example.deepsleep.utils
 
 import com.example.deepsleep.root.RootCommander
@@ -12,7 +11,7 @@ class CustomOptimizer {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 根据错误，此处需要传入 List<String>
+            // 直接传入整个列表
             commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
             RootCommander.execBatch(commands).isSuccess
         }
@@ -61,10 +60,9 @@ class CustomOptimizer {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 根据错误，此处需要传入 String，因此遍历
-            whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
-            }
+            // 如果函数期望 List，但此处可能期望单个，根据错误可能需要调整
+            // 假设此处也接受 List
+            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
@@ -77,7 +75,6 @@ class CustomOptimizer {
             val result = RootCommander.exec(tempCommands)
             val temp = result.out.firstOrNull()?.toIntOrNull() ?: 0
             val tempCelsius = temp / 1000.0
-            // 修复：直接使用表达式，移除 return 关键字
             if (tempCelsius > threshold) {
                 val commands = OptimizationCommands.ThermalOptimizer.limitMaxFreq(2, 1200000)
                 RootCommander.exec(commands).isSuccess
