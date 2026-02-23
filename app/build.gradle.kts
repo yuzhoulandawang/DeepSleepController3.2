@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
-    id("com.google.dagger.hilt.android") version "2.53.1"
+    id("com.google.dagger.hilt.android") version "2.55"
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
 }
 
