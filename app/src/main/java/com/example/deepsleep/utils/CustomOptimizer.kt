@@ -6,13 +6,13 @@ import kotlinx.coroutines.withContext
 
 class CustomOptimizer {
 
+    // 这些函数中，batchOptimizeApps 期望 List<String>
     suspend fun applyLightPowerSaving(whitelist: List<String> = emptyList()): Boolean {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 根据错误提示，此处期望 List<String>
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist)) // 传入 List
             RootCommander.execBatch(commands).isSuccess
         }
     }
@@ -23,8 +23,7 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.disableMotion())
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
-            // 根据错误提示，此处期望 List<String>
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist)) // 传入 List
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(100))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
@@ -37,8 +36,7 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.disableMotion())
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
-            // 根据错误提示，此处期望 List<String>
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist)) // 传入 List
             commands.addAll(OptimizationCommands.PowerSaver.enable())
             commands.addAll(OptimizationCommands.NetworkOptimizer.disableBluetooth())
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(50))
@@ -54,18 +52,17 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.enableMotion())
             commands.addAll(OptimizationCommands.CpuScheduler.applyPerformanceMode())
             commands.addAll(OptimizationCommands.PowerSaver.disable())
-            // 此函数未调用 batchOptimizeApps，无需修改
             RootCommander.execBatch(commands).isSuccess
         }
     }
 
+    // 此函数中，batchOptimizeApps 期望 String
     suspend fun applyOfficeMode(whitelist: List<String> = emptyList()): Boolean {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 根据错误提示，此处期望 String，因此遍历
             whitelist.forEach { app ->
-                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app)) // 传入 String
             }
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
