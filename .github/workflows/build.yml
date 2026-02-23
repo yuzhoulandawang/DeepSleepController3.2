@@ -110,16 +110,35 @@ jobs:
       # ========== 诊断：确认 JavaPoet 版本 ==========
       - name: 🔎 Verify JavaPoet version
         run: |
-          echo "### JavaPoet version (compile classpath)" >> $GITHUB_STEP_SUMMARY
-          ./gradlew -q app:dependencies --configuration compileClasspath | grep javapoet | head -5 >> $GITHUB_STEP_SUMMARY || echo "Not found" >> $GITHUB_STEP_SUMMARY
+          echo "### JavaPoet version (debug compile classpath)" >> $GITHUB_STEP_SUMMARY
+          ./gradlew -q app:dependencies --configuration debugCompileClasspath | grep javapoet | head -5 >> $GITHUB_STEP_SUMMARY || echo "Not found" >> $GITHUB_STEP_SUMMARY
 
-      # ========== 构建阶段（捕获完整日志） ==========
-      - name: 🏗️ Build Debug APK (with scan)
+      # ========== 首次构建尝试 ==========
+      - name: 🏗️ First build attempt
+        id: first_build
         run: |
           ./gradlew assembleDebug --stacktrace --scan --refresh-dependencies 2>&1 | tee build.log
         continue-on-error: true
 
-      # ========== 分类错误报告 ==========
+      # ========== 智能错误处理：如果失败且是 JavaPoet 问题，尝试修复并重试 ==========
+      - name: 🛠️ Auto-fix for Hilt/JavaPoet conflict
+        if: steps.first_build.outcome == 'failure' && (contains(steps.first_build.outputs.stdout, 'java.lang.NoSuchMethodError') || contains(steps.first_build.outputs.stdout, 'com.squareup.javapoet.ClassName.canonicalName'))
+        run: |
+          echo "Detected Hilt/JavaPoet conflict. Attempting to upgrade Hilt version to 2.53.1 and Room to 2.7.0..."
+          # 备份原始文件
+          cp app/build.gradle.kts app/build.gradle.kts.bak
+          # 升级 Hilt 和 Room 版本（简单替换，可能需要更精确的匹配）
+          sed -i 's/id("com.google.dagger.hilt.android") version "[0-9.]*"/id("com.google.dagger.hilt.android") version "2.53.1"/' app/build.gradle.kts
+          sed -i 's/implementation("com.google.dagger:hilt-android:[0-9.]*")/implementation("com.google.dagger:hilt-android:2.53.1")/' app/build.gradle.kts
+          sed -i 's/ksp("com.google.dagger:hilt-compiler:[0-9.]*")/ksp("com.google.dagger:hilt-compiler:2.53.1")/' app/build.gradle.kts
+          sed -i 's/implementation("androidx.room:room-runtime:[0-9.]*")/implementation("androidx.room:room-runtime:2.7.0")/' app/build.gradle.kts
+          sed -i 's/implementation("androidx.room:room-ktx:[0-9.]*")/implementation("androidx.room:room-ktx:2.7.0")/' app/build.gradle.kts
+          sed -i 's/ksp("androidx.room:room-compiler:[0-9.]*")/ksp("androidx.room:room-compiler:2.7.0")/' app/build.gradle.kts
+          # 再次清理并构建
+          ./gradlew clean assembleDebug --stacktrace --scan 2>&1 | tee build.log
+        continue-on-error: true
+
+      # ========== 分类错误报告（基于最终 build.log） ==========
       - name: 📊 Generate categorized error report
         if: always()
         run: |
@@ -146,6 +165,7 @@ jobs:
                 ["Compose上下文错误"]="@Composable invocations can only happen from the context of a @Composable function"
                 ["资源缺失"]="resource.*not found"
                 ["依赖冲突"]="Conflict|dependency convergence"
+                ["Hilt/JavaPoet冲突"]="java.lang.NoSuchMethodError.*javapoet|com.squareup.javapoet.ClassName.canonicalName"
                 ["其他错误"]="^e:|^error:|FAILURE:"
               )
               
