@@ -11,8 +11,10 @@ class CustomOptimizer {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 直接传入整个列表
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            // 遍历白名单，为每个应用单独生成命令（确保传入 String）
+            whitelist.forEach { app ->
+                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+            }
             RootCommander.execBatch(commands).isSuccess
         }
     }
@@ -23,7 +25,9 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.disableMotion())
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            whitelist.forEach { app ->
+                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+            }
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(100))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
@@ -36,7 +40,9 @@ class CustomOptimizer {
             commands.addAll(OptimizationCommands.DeepDoze.disableMotion())
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyStandbyMode())
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            whitelist.forEach { app ->
+                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+            }
             commands.addAll(OptimizationCommands.PowerSaver.enable())
             commands.addAll(OptimizationCommands.NetworkOptimizer.disableBluetooth())
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(50))
@@ -60,9 +66,9 @@ class CustomOptimizer {
         return withContext(Dispatchers.IO) {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 如果函数期望 List，但此处可能期望单个，根据错误可能需要调整
-            // 假设此处也接受 List
-            commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
+            whitelist.forEach { app ->
+                commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(app))
+            }
             commands.addAll(OptimizationCommands.ScreenOptimizer.setBrightness(180))
             commands.addAll(OptimizationCommands.ScreenOptimizer.setAutoBrightness(false))
             RootCommander.execBatch(commands).isSuccess
