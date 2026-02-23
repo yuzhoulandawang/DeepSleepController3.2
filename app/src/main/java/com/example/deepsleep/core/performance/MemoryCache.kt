@@ -11,7 +11,7 @@ private data class CacheEntry<V>(
     fun isExpired(ttl: Long): Boolean = System.currentTimeMillis() - timestamp > ttl
 }
 
-@Suppress("EXPOSED_FUNCTION_RETURN_TYPE")  // 编译器误报，实际并未暴露 CacheEntry
+@Suppress("EXPOSED_FUNCTION_RETURN_TYPE") // 编译器误报，实际并未暴露 CacheEntry
 class MemoryCache<K, V>(
     private val maxSize: Int = 100,
     private val ttl: Long = 5 * 60 * 1000 // 5分钟过期
@@ -19,6 +19,9 @@ class MemoryCache<K, V>(
     private val cache = LinkedHashMap<K, CacheEntry<V>>(maxSize, 0.75f, true)
     private val mutex = Mutex()
 
+    /**
+     * 获取缓存值
+     */
     suspend fun get(key: K): V? = mutex.withLock {
         val entry = cache[key]
         if (entry != null && !entry.isExpired(ttl)) {
@@ -28,6 +31,9 @@ class MemoryCache<K, V>(
         return@withLock null
     }
 
+    /**
+     * 设置缓存值
+     */
     suspend fun put(key: K, value: V) = mutex.withLock {
         cache[key] = CacheEntry(value)
         if (cache.size > maxSize) {
@@ -35,6 +41,9 @@ class MemoryCache<K, V>(
         }
     }
 
+    /**
+     * 获取或计算缓存值
+     */
     suspend fun getOrPut(key: K, compute: suspend () -> V): V {
         get(key)?.let { return it }
         val value = compute()
@@ -42,17 +51,52 @@ class MemoryCache<K, V>(
         return value
     }
 
-    suspend fun remove(key: K) = mutex.withLock { cache.remove(key) }
-    suspend fun clear() = mutex.withLock { cache.clear() }
+    /**
+     * 移除缓存值
+     */
+    suspend fun remove(key: K) = mutex.withLock {
+        cache.remove(key)
+    }
+
+    /**
+     * 清空所有缓存
+     */
+    suspend fun clear() = mutex.withLock {
+        cache.clear()
+    }
+
+    /**
+     * 清理过期缓存
+     */
     suspend fun cleanup() = mutex.withLock {
         val expiredKeys = cache.filter { it.value.isExpired(ttl) }.keys
         expiredKeys.forEach { cache.remove(it) }
     }
-    suspend fun size(): Int = mutex.withLock { cache.size }
+
+    /**
+     * 获取缓存大小
+     */
+    suspend fun size(): Int = mutex.withLock {
+        cache.size
+    }
 
     companion object {
-        fun createSettingsCache(): MemoryCache<String, String> = MemoryCache(50, 10 * 60 * 1000)
-        fun createRootCommandCache(): MemoryCache<String, String> = MemoryCache(20, 60 * 1000)
-        fun createStatsCache(): MemoryCache<String, Int> = MemoryCache(30, 2 * 60 * 1000)
+        /**
+         * 创建设置缓存
+         */
+        fun createSettingsCache(): MemoryCache<String, String> =
+            MemoryCache(maxSize = 50, ttl = 10 * 60 * 1000) // 10分钟
+
+        /**
+         * 创建 Root 命令结果缓存
+         */
+        fun createRootCommandCache(): MemoryCache<String, String> =
+            MemoryCache(maxSize = 20, ttl = 60 * 1000) // 1分钟
+
+        /**
+         * 创建统计数据缓存
+         */
+        fun createStatsCache(): MemoryCache<String, Int> =
+            MemoryCache(maxSize = 30, ttl = 2 * 60 * 1000) // 2分钟
     }
 }
