@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             val rootAccessGranted = RootCommander.requestRootAccess()
-            
+
             if (rootAccessGranted) {
                 val hasRoot = RootCommander.checkRoot()
                 if (hasRoot) {
@@ -53,8 +53,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            ToastComponent()
-            
+            // 修复：传递 manager 参数
+            ToastComponent(manager = GlobalToastManager)
+
             DeepSleepTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
