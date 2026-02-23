@@ -248,17 +248,13 @@ fun DeepSleepSnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Mod
     SnackbarHost(hostState, modifier.padding(16.dp)) { snackbarData ->
         // 正确使用 Snackbar
         Snackbar(
+            snackbarData = snackbarData,
             modifier = Modifier,
-            action = {
-                snackbarData.visuals.actionLabel?.let { actionLabel ->
-                    TextButton(onClick = snackbarData::performAction) {
-                        Text(actionLabel)
-                    }
-                }
-            },
             shape = RoundedCornerShape(8.dp)
         ) {
-            Text(snackbarData.visuals.message)
+            // 默认内容已经包含消息文本
+            // 如果需要自定义 action 按钮，可以通过 snackbarData.visuals.actionLabel 等处理
+            // 但此处的 lambda 用于在 snackbar 内部添加额外内容，通常不需要
         }
     }
 }
@@ -311,7 +307,7 @@ fun ProgressIndicator(
             }
         }
         LinearProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier.fillMaxWidth(),
             color = color,
             trackColor = color.copy(alpha = 0.2f)
