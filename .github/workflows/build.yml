@@ -37,26 +37,21 @@ jobs:
           echo "### Compatibility Check" >> $GITHUB_STEP_SUMMARY
           echo "- Gradle version: $GRADLE_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "- AGP version: $AGP_VERSION" >> $GITHUB_STEP_SUMMARY
-          if [[ "$AGP_VERSION" == "8.13.0" && "$GRADLE_VERSION" != "8.13"* ]]; then
-            echo "⚠️ AGP 8.13.0 requires Gradle 8.13, but found $GRADLE_VERSION" >> $GITHUB_STEP_SUMMARY
-          fi
+          # 通用提示（非严格检查）
+          echo "⚠️ If you encounter issues, ensure Gradle and AGP versions are compatible." >> $GITHUB_STEP_SUMMARY
 
-      - name: 📄 Show app/build.gradle.kts content
-        run: cat app/build.gradle.kts
+      - name: 📄 Show app/build.gradle.kts content (head)
+        run: head -50 app/build.gradle.kts
 
-      - name: 🔧 Ensure compileSdk in app/build.gradle.kts
+      - name: 🔧 Ensure compileSdk in app/build.gradle.kts (optional)
         run: |
           if ! grep -q "compileSdk = 35" app/build.gradle.kts; then
-            echo "⚠️ compileSdk not found, adding it."
-            sed -i '/android {/a\    compileSdk = 35' app/build.gradle.kts
+            echo "⚠️ compileSdk not found. You may need to add 'compileSdk = 35' manually." >> $GITHUB_STEP_SUMMARY
           else
-            echo "✅ compileSdk found."
+            echo "✅ compileSdk found." >> $GITHUB_STEP_SUMMARY
           fi
 
-      # ========== 彻底清理 Gradle 缓存 ==========
-      - name: 🧹 Wipe Gradle cache
-        run: rm -rf ~/.gradle/caches/
-
+      # ========== 刷新依赖（不删除全部缓存） ==========
       - name: 🧹 Clean and refresh dependencies
         run: ./gradlew clean --refresh-dependencies
 
@@ -83,22 +78,24 @@ jobs:
             echo "need_fix=false" >> $GITHUB_OUTPUT
           fi
 
-      # ========== 智能错误处理：尝试修复并重试 ==========
+      # ========== 智能错误处理：添加 resolutionStrategy 修复冲突 ==========
       - name: 🛠️ Auto-fix for Hilt/JavaPoet conflict
         if: steps.check_fix.outputs.need_fix == 'true'
         run: |
-          echo "Detected Hilt/JavaPoet conflict. Attempting to upgrade Hilt version to 2.55 and Room to 2.7.0..."
-          # 备份原始文件
-          cp app/build.gradle.kts app/build.gradle.kts.bak
-          # 升级 Hilt 和 Room 版本（同时匹配单引号和双引号）
-          sed -i -E 's/id[("]com.google.dagger.hilt.android[")] version [("][0-9.]+[")]/id("com.google.dagger.hilt.android") version "2.55"/' app/build.gradle.kts
-          sed -i -E 's/implementation[("]com.google.dagger:hilt-android:[0-9.]+[")]/implementation("com.google.dagger:hilt-android:2.55")/' app/build.gradle.kts
-          sed -i -E 's/ksp[("]com.google.dagger:hilt-compiler:[0-9.]+[")]/ksp("com.google.dagger:hilt-compiler:2.55")/' app/build.gradle.kts
-          sed -i -E 's/implementation[("]androidx.room:room-runtime:[0-9.]+[")]/implementation("androidx.room:room-runtime:2.7.0")/' app/build.gradle.kts
-          sed -i -E 's/implementation[("]androidx.room:room-ktx:[0-9.]+[")]/implementation("androidx.room:room-ktx:2.7.0")/' app/build.gradle.kts
-          sed -i -E 's/ksp[("]androidx.room:room-compiler:[0-9.]+[")]/ksp("androidx.room:room-compiler:2.7.0")/' app/build.gradle.kts
-          # 再次清理并构建（生成独立的日志文件，并覆盖 build.log 作为最终日志）
-          rm -rf ~/.gradle/caches/
+          echo "Detected Hilt/JavaPoet conflict. Adding resolutionStrategy to force JavaPoet 1.13.0..."
+          # 检查是否已添加过，避免重复追加
+          if ! grep -q "force.*javapoet" app/build.gradle.kts; then
+            cat << 'EOF' >> app/build.gradle.kts
+
+// Auto-added by CI to fix Hilt/JavaPoet conflict (force JavaPoet 1.13.0)
+configurations.all {
+    resolutionStrategy {
+        force("com.squareup:javapoet:1.13.0")
+    }
+}
+EOF
+          fi
+          # 再次构建并生成新的日志
           ./gradlew clean assembleDebug --stacktrace 2>&1 | tee build_fixed.log
           cp build_fixed.log build.log
         continue-on-error: true
