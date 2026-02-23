@@ -11,7 +11,6 @@ class CustomOptimizer {
             val commands = mutableListOf<String>()
             commands.addAll(OptimizationCommands.DeepDoze.forceIdle())
             commands.addAll(OptimizationCommands.CpuScheduler.applyDefaultMode())
-            // 直接调用，使用完全限定名
             commands.addAll(OptimizationCommands.BackgroundOptimizer.batchOptimizeApps(whitelist))
             RootCommander.execBatch(commands).isSuccess
         }
@@ -70,14 +69,16 @@ class CustomOptimizer {
     suspend fun applyThermalProtection(threshold: Int = 70): Boolean {
         return withContext(Dispatchers.IO) {
             val tempCommands = OptimizationCommands.ThermalOptimizer.getCpuTemperature()
-            val result = RootCommander.exec(tempCommands)
+            // 修复：使用 execBatch 执行命令列表
+            val result = RootCommander.execBatch(tempCommands)
             val tempString = result.out.firstOrNull()
             val temp = tempString?.toIntOrNull() ?: 0
             val tempCelsius = temp / 1000.0
-            
+
             if (tempCelsius > threshold) {
                 val commands = OptimizationCommands.ThermalOptimizer.limitMaxFreq(2, 1200000)
-                RootCommander.exec(commands).isSuccess
+                // 修复：使用 execBatch 执行命令列表
+                RootCommander.execBatch(commands).isSuccess
             } else {
                 true
             }
